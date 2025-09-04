@@ -1,4 +1,6 @@
 from langchain.prompts import PromptTemplate
+
+from db import get_db
 from .prompt import prompt
 from agents.base_llms import openai_llm
 from langchain.chains.llm import LLMChain
@@ -75,6 +77,7 @@ class StoryTellerAgent:
         """
         # Placeholder: Actual database logic should be implemented here (e.g., using SQLite, MongoDB, etc.)
         print(f"Storing story in the database... (story: {story[:50]}...)")
+        db = get_db()
         return "Story successfully stored in database."
 
     def run(self):

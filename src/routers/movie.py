@@ -1,24 +1,53 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Request, Depends, WebSocketDisconnect, WebSocket
 from schemas.movie import MovieRequest, MovieResponse
 from uuid import uuid4
 from agents.story_teller.llm_init import StoryTellerAgent
-
+from orm.users import UserOperations, User
+from db import get_db
+from sqlalchemy.orm import Session
+import asyncio
 
 router = APIRouter()
 
-
-database = []
+DUPLICATE_EMAIL_ALLOWED = True
 
 
 @router.post("/movie", response_model=MovieResponse)
-async def create_movie(request: MovieRequest):
+async def create_movie(movie_req: MovieRequest, request: Request, db: Session = Depends(get_db)):
     # Simulate movie creation logic
-    movie_summary = {"movie_topic": request.topic, "characters": request.characters, "id": str(uuid4())}
-    
-    database.append(movie_summary)
-    return MovieResponse(message="Movie request created successfully for topic: " + request.topic)
+    ip_address = request.client.host
+    user_operations = UserOperations(db)
+    if user_operations.check_ban(ip_address):
+        return MovieResponse(message="Your IP has been banned from making requests.")
+
+    if not DUPLICATE_EMAIL_ALLOWED and user_operations.check_email_exists(movie_req.email):
+        return MovieResponse(message="Email address is already in use.")
+
+    user = User(
+        user_id = str(uuid4()),
+        email_address = movie_req.email,
+        topic = movie_req.topic,
+        ip = ip_address
+    )
+    user_operations.create_user(user)
+    return MovieResponse(message="Movie request created successfully for topic: " + movie_req.topic, user_id=user.user_id)
 
 
+
+@router.websocket("/ws/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: str, db: Session = Depends(get_db)):
+    await websocket.accept()
+    user_operations = UserOperations(db)
+    topic = user_operations.get_user(user_id).topic
+
+    try:
+        while True:
+            # topic = user_operations.get_user(user_id).topic
+            await websocket.send_json({"message": "Movie request created successfully for topic: " + topic})
+            await asyncio.sleep(10)
+
+    except WebSocketDisconnect:
+        print("Client disconnected")
 
 # @router.websocket("/ws/{user_id}")
 # async def websocket_endpoint(user_id: str, websocket: WebSocket):
