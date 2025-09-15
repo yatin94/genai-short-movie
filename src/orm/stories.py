@@ -10,6 +10,7 @@ class StoryOperations:
         return self.db_session.query(Story).filter(Story.id == story_id).first()
 
     def create_story(self, story: Story) -> Story:
+        print("Creating story in DB:", story)
         self.db_session.add(story)
         self.db_session.commit()
         self.db_session.refresh(story)

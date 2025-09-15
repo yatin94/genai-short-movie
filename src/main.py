@@ -5,7 +5,10 @@ from db import Base, engine, SessionLocal
 from routers import movie_router
 from models.users import User, BlockList
 from models.stories import Story
-
+from fastapi import Depends
+from sqlalchemy.orm import Session
+from db import get_db
+from orm.stories import Story
 
 async def generate_data():
     while True:
@@ -42,6 +45,7 @@ app.include_router(movie_router)
 
 
 @app.get("/")
-async def read_root():
-    return {"message": "Hello, FastAPI with Poetry!"}
+async def read_root(db: Session = Depends(get_db)):
+    data = db.query(Story).all()
+    return {"message": data}
 

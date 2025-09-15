@@ -1,11 +1,14 @@
 from fastapi import APIRouter, Request, Depends, WebSocketDisconnect, WebSocket
 from schemas.movie import MovieRequest, MovieResponse
 from uuid import uuid4
-from agents.story_teller.llm_init import StoryTellerAgent
+from src.agents.story_teller.story_teller_llm import StoryTellerAgent
 from orm.users import UserOperations, User
 from db import get_db
 from sqlalchemy.orm import Session
 import asyncio
+from fastapi import BackgroundTasks
+from functions.bg_tasks import call_story_teller_factory
+
 
 router = APIRouter()
 
@@ -13,7 +16,7 @@ DUPLICATE_EMAIL_ALLOWED = True
 
 
 @router.post("/movie", response_model=MovieResponse)
-async def create_movie(movie_req: MovieRequest, request: Request, db: Session = Depends(get_db)):
+async def create_movie(movie_req: MovieRequest, background_tasks: BackgroundTasks, request: Request, db: Session = Depends(get_db)):
     # Simulate movie creation logic
     ip_address = request.client.host
     user_operations = UserOperations(db)
@@ -30,6 +33,14 @@ async def create_movie(movie_req: MovieRequest, request: Request, db: Session = 
         ip = ip_address
     )
     user_operations.create_user(user)
+    background_tasks.add_task(
+        func=call_story_teller_factory, 
+        topic=movie_req.topic, 
+        user_id=user.user_id, 
+        characters_count=movie_req.characters,
+        db=db
+    )
+    print("Background task for story generation has been initiated.")
     return MovieResponse(message="Movie request created successfully for topic: " + movie_req.topic, user_id=user.user_id)
 
 
