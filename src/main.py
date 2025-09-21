@@ -8,7 +8,6 @@ from models.stories import Story
 from fastapi import Depends
 from sqlalchemy.orm import Session
 from db import get_db
-from orm.stories import Story
 
 async def generate_data():
     while True:

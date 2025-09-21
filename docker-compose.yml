@@ -9,9 +9,9 @@ services:
     volumes:
       - .:/FastAPI
     environment:
-      - DB_USER=yourusername
-      - DB_PASSWORD=yourpassword
-      - DB_NAME=yourdatabase
+      - DB_USER=user
+      - DB_PASSWORD=pass
+      - DB_NAME=db
       - DB_HOST=db
       - DB_PORT=5432
       - OPENAI_API_KEY=your_openai_api_key
@@ -21,9 +21,9 @@ services:
     image: postgres:13
     container_name: genai-short-movie-db
     environment:
-      - POSTGRES_USER=yourusername
-      - POSTGRES_PASSWORD=yourpassword
-      - POSTGRES_DB=yourdatabase
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=pass
+      - POSTGRES_DB=db
     ports:
       - "5432:5432"
   
