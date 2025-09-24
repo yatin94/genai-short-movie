@@ -5,6 +5,7 @@ from db import Base, engine, SessionLocal
 from routers import movie_router
 from models.users import User, BlockList
 from models.stories import Story
+from models.logging import RequestState, AllBackgroundTask
 from fastapi import Depends
 from sqlalchemy.orm import Session
 from db import get_db
@@ -46,5 +47,6 @@ app.include_router(movie_router)
 @app.get("/")
 async def read_root(db: Session = Depends(get_db)):
     data = db.query(Story).all()
+    print(f"data: {data}")
     return {"message": data}
 

@@ -14,23 +14,31 @@ class Story(Base):
     user: Mapped["User"] = relationship("User", back_populates="story")
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
 
+    # 👇 Add this
+    scenes: Mapped[List["StoryScenes"]] = relationship("StoryScenes", back_populates="story")
+
 
 class StoryScenes(Base):
     __tablename__ = "story_scenes"
     story_id: Mapped[int] = mapped_column(ForeignKey("stories.id"))
-    scene_numer: Mapped[int] = mapped_column(nullable=False)
+    scene_number: Mapped[int] = mapped_column(nullable=False)  # also fixed typo
     scene_heading: Mapped[str] = mapped_column(String(100), nullable=False)
     action: Mapped[str] = mapped_column(Text, nullable=False)
-    story: Mapped["Story"] = relationship("Story", back_populates="segments")
+    
+    # 👇 Match with Story.scenes
+    story: Mapped["Story"] = relationship("Story", back_populates="scenes")
+
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    dialouge: Mapped[List["Dialouge"]] = relationship("Dialouge", back_populates="story_scene")
 
+    dialogues: Mapped[List["Dialogue"]] = relationship("Dialogue", back_populates="story_scene")
 
-class Dialouge(Base):
+    
+class Dialogue(Base):
     __tablename__ = "dialogues"
     scene_id: Mapped[int] = mapped_column(ForeignKey("story_scenes.id"))
     character: Mapped[str] = mapped_column(String(50), nullable=False)
     line: Mapped[str] = mapped_column(Text, nullable=False)
-    story_scene: Mapped["StoryScenes"] = relationship("StoryScenes", back_populates="dialogues")
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
 
+    story_scene: Mapped["StoryScenes"] = relationship("StoryScenes", back_populates="dialogues")
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)

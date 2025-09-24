@@ -1,14 +1,13 @@
 from fastapi import APIRouter, Request, Depends, WebSocketDisconnect, WebSocket
 from schemas.movie import MovieRequest, MovieResponse
 from uuid import uuid4
-from src.agents.story_teller.story_teller_llm import StoryTellerAgent
 from orm.users import UserOperations, User
 from db import get_db
 from sqlalchemy.orm import Session
 import asyncio
 from fastapi import BackgroundTasks
-from functions.bg_tasks import call_story_teller_factory
-
+from functions.bg_tasks import call_parent_agent_factory
+from orm.logging import BgTaskOperations
 
 router = APIRouter()
 
@@ -34,12 +33,13 @@ async def create_movie(movie_req: MovieRequest, background_tasks: BackgroundTask
     )
     user_operations.create_user(user)
     background_tasks.add_task(
-        func=call_story_teller_factory, 
+        func=call_parent_agent_factory, 
         topic=movie_req.topic, 
         user_id=user.user_id, 
         characters_count=movie_req.characters,
         db=db
     )
+    BgTaskOperations(db).create_bg_task(movie_req.topic, user.user_id)
     print("Background task for story generation has been initiated.")
     return MovieResponse(message="Movie request created successfully for topic: " + movie_req.topic, user_id=user.user_id)
 

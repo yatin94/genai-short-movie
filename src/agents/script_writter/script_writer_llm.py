@@ -1,63 +1,71 @@
-from db import get_db
-from orm.scripts import ScriptOperations
 from .prompt import prompt
 
-from typing import TypedDict
 from sqlalchemy.orm import Session
-from agents.base_llms import openai_llm, OpenAI
+from agents.base_llms import State
 from agents.script_writter.prompt import prompt
-from langchain.chains.llm import LLMChain
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.graph import StateGraph, END, START
 
-class State(TypedDict):
-    topic: str
-    story: str | None
-    script: str | None
+from src.agents.abstract import ChildAgentABC, logger
 
 
-class ScriptWriterAgent:
-    def __init__(self, story: str, user_id: str, db: Session, topic: str) -> None:
-        self.story: str = story
-        self.topic: str = topic
-        self.user_id: str = user_id
+
+class ScriptWriterAgent(ChildAgentABC):
+    def __init__(self, db: Session, user_id: str) -> None:
         self.db: Session = db
-        self.llm: OpenAI = openai_llm
-        self.script_prompt: ChatPromptTemplate = ChatPromptTemplate.from_template(
+        self.user_id: str = user_id
+        super().__init__()
+
+
+    @property
+    def prompt(self) -> ChatPromptTemplate:
+        return ChatPromptTemplate.from_template(
             prompt
         )
-        self.chain = self.script_prompt | self.llm
+    
+    @property
+    def chain(self):
+        return self.prompt | self.llm
     
     def generate_script(self, state: State) -> State:
         """
         Generate a short creative story based on the topic using the LLM chain.
         """
-        response = self.chain.invoke({"story": state["story"]})
-        return {"script": response, "topic": state["topic"], "story": state["story"]}
-    
+        logger.info(f"Generating script from script writer with state {state}")
+        state['script'] = "In a galaxy far, far away..."
+        # response = self.chain.invoke({"story": state["story"]})
+        # state["script"] = response
+        return state
+
     def add_to_database(self, state: State) -> State:
         """
         Stores the story into a database (placeholder for real integration).
         """
-        print("add_to_database called with kwargs:", state)
-        print(f"Storing script in the database... (script: {state['script']}...)")
+        logger.info(f"Add to database in script writer with state {state}")
+        # print("add_to_database called with kwargs:", state)
+        # print(f"Storing script in the database... (script: {state['script']}...)")
         # Here you would add the logic to store the script in the database
         # For example:
-        return {"script": "response", "topic": state["topic"], "story": state["story"]}
-    
-    def run(self) -> None:
+        return state
+
+    def run(self, state: State) -> dict:
         """
         Executes the full workflow by orchestrating tools via the agent.
         """
+        return self.app.invoke(state)
+
+    
+    def get_graph(self) -> StateGraph:
         workflow_state = StateGraph(State)
-        workflow_state.add_node('Generate Script', self.generate_script)
+        workflow_state.add_node('generate_script', self.generate_script)
         workflow_state.add_node('add_to_database', self.add_to_database)
 
-        workflow_state.add_edge(START, 'Generate Script')
-        workflow_state.add_edge('Generate Script', 'add_to_database')
+        workflow_state.add_edge(START, 'generate_script')
+        workflow_state.add_edge('generate_script', 'add_to_database')
         workflow_state.add_edge('add_to_database', END)
 
-        app = workflow_state.compile()
-        app.invoke({"topic": self.topic, "story": self.story, "script": None})
+        return workflow_state
+    
+
 
         
