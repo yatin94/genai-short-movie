@@ -2,16 +2,21 @@ from .prompt import prompt
 from agents.base_llms import State
 from sqlalchemy.orm import Session
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers.string import StrOutputParser
 
 from langgraph.graph import StateGraph, END
 from src.agents.abstract import ChildAgentABC, logger
+from langchain_community.llms.fake import FakeListLLM
+from orm.stories import Story
+from db_ops.stories import StoryOperations
 
 
 
-class StoryTellerAgent(ChildAgentABC):
+class StoryTellerAgent(ChildAgentABC, index=1):
     def __init__(self, db: Session, user_id: str):
         self.db: Session = db
         self.user_id: str = user_id
+        self.fake = True
         super().__init__()
     
     
@@ -22,38 +27,48 @@ class StoryTellerAgent(ChildAgentABC):
         )
     
     @property
+    def fake_llm(self):
+        story_text = """
+           In a quiet town, Maya and Tom discovered a hidden ledger revealing corrupt dealings by the town’s officials. Instead of despair, they chose to act. Maya shared the ledger with the community, sparking conversations and awareness. Tom used his skills to verify the information, ensuring their claims were solid. Together, they organized a peaceful rally, encouraging transparency and honesty. Their courage inspired others to stand against corruption. Over time, the town’s leaders became more accountable, and trust was rebuilt. Maya and Tom learned that even small acts of integrity could ignite change, proving that courage and unity are powerful tools against corruption. Their town thrived on honesty, and hope shone brighter than ever.
+        """
+        return FakeListLLM(responses=[
+            story_text
+        ])
+    
+    @property
     def chain(self):
-        return self.prompt | self.llm
+        return self.prompt | self.llm | StrOutputParser()
+    
+    @property
+    def fake_chain(self):
+        return self.prompt | self.fake_llm
 
 
-    def generate_story(self, state: State) -> State:
+    def generate_story(self, state: State) -> dict:
         """
         Generate a short creative story based on the topic using the LLM chain.
         """
         logger.info(f"Generating story from story teller with state {state}")
-        state['story'] = "Once upon a time in a distant galaxy..."
-        # response = self.chain.invoke({"topic": state["topic"], "characters_count": self.characters_count})
-        # print("LLM response:", response)
-        # state["story"] = response
-        return state
+        if self.fake:
+            logger.info("Using fake LLM for story generation")
+            response = self.fake_chain.invoke({"topic": state["topic"], "characters_count": self.characters_count})
+        else:
+            response = self.chain.invoke({"topic": state["topic"], "characters_count": self.characters_count})
+        logger.info(f"LLM response: {response}")
+        return {"story": response}
 
 
-    def add_to_database(self, state: State) -> State:
+    def add_to_database(self, state: State) -> dict:
         """
         Stores the story into a database (placeholder for real integration).
         """
         logger.info(f"Adding to db from story teller with state {state}")
-        state['story_id'] = 123  # Placeholder for actual story ID
-
-        # print("add_to_database called with kwargs:", state)
-        # print(f"Storing story in the database... (story: {state['story']}...)")
-        # story_obj = Story(
-        #     user_id=self.user_id,
-        #     story_text=state['story']
-        # )
-        # StoryOperations(self.db).create_story(story_obj)
-        # state['story_id'] = story_obj.id
-        return state
+        story_obj = Story(
+            user_id=self.user_id,
+            story_text=state['story']
+        )
+        StoryOperations(self.db).create_story(story_obj)
+        return {"story_id": story_obj.id}
     
 
     def run(self, state: State) -> dict:

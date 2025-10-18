@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Request, Depends, WebSocketDisconnect, WebSocket
 from schemas.movie import MovieRequest, MovieResponse
 from uuid import uuid4
-from orm.users import UserOperations, User
+from db_ops.users import UserOperations, User
 from db import get_db
 from sqlalchemy.orm import Session
 import asyncio
 from fastapi import BackgroundTasks
 from functions.bg_tasks import call_parent_agent_factory
-from orm.logging import BgTaskOperations
+from db_ops.logging import BgTaskOperations
 
 router = APIRouter()
 

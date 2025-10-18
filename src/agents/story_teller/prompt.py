@@ -4,6 +4,7 @@ The story should be engaging, original, and concise enough to be read aloud in u
 Be sure to conclude the story with a positive or reflective tone, showcasing growth, understanding, or a path forward. 
 The story should include {characters_count} main characters. 
 Do not include any additional commentary or explanations. The topic is provided below.
+Do not add any extra text or code block markers or formatting outside of the story itself.
 ```
 Topic: {topic}
 ```

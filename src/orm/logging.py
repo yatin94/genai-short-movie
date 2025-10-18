@@ -1,18 +1,23 @@
-from sqlalchemy.orm import Session
-from models.logging import AllBackgroundTask, RequestState
+
+from sqlalchemy import String, DateTime
+from sqlalchemy.orm import relationship, Mapped, mapped_column
+
+from db import Base
+from datetime import datetime
 
 
-class BgTaskOperations:
-    def __init__(self, db_session: Session) -> None:
-        self.db_session = db_session
+class RequestState(Base):
+    __tablename__ = "request_state"
+    user_id: Mapped[str] = mapped_column(String, primary_key=True, index=True)
+    comment: Mapped[str] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
-    def create_bg_task(self, topic: str, user_id: str) -> AllBackgroundTask:
-        bg_task = AllBackgroundTask(
-            user_id = user_id,
-            topic = topic
-        )
-        self.db_session.add(bg_task)
-        self.db_session.commit()
-        self.db_session.refresh(bg_task)
-        return bg_task
+class AllBackgroundTask(Base):
+    __tablename__ = "all_background_task"
+    user_id: Mapped[str] = mapped_column(String, primary_key=True, index=True)
+    topic: Mapped[str] = mapped_column(String)
+    response_url: Mapped[str] = mapped_column(String, nullable=True)
+    response: Mapped[str] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    

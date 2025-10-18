@@ -9,7 +9,5 @@ class ScriptDialouges(BaseModel):
 class CreateScript(BaseModel):
     story_id: int
     scene_number: int
-    scene_heading: str
-    action: str
     dialogues: list[ScriptDialouges] = []
 

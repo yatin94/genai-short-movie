@@ -1,0 +1,65 @@
+[
+    {
+        "scene_number": 1,
+        "dialogue": [
+            {
+                "character": "MAYA",
+                "line": "Look at this, Tom. I found an old ledger hidden behind the town hall's bookshelf. It looks like it contains some secret dealings."
+            },
+            {
+                "character": "TOM",
+                "line": "Let me see that. If it's what I think it is, this could change everything for our town."
+            },
+            {
+                "character": "MAYA",
+                "line": "Should we tell anyone? It\u2019s risky, but maybe it\u2019s time people knew the truth."
+            },
+            {
+                "character": "TOM",
+                "line": "Absolutely. We can\u2019t ignore this. We have to act carefully, but we need to light a fire of honesty here."
+            }
+        ]
+    },
+    {
+        "scene_number": 2,
+        "dialogue": [
+            {
+                "character": "TOM",
+                "line": "Are you sure about sharing this with everyone, Maya? It\u2019s risky, and we don\u2019t know how they\u2019ll react."
+            },
+            {
+                "character": "MAYA",
+                "line": "I believe transparency is the only way forward, Tom. People deserve to know what\u2019s been happening behind their backs."
+            },
+            {
+                "character": "TOM",
+                "line": "But what if it backfires? What if they deny everything or even turn against us?"
+            },
+            {
+                "character": "MAYA",
+                "line": "We have to be prepared for that. We can't let fear stop us from doing what\u2019s right."
+            }
+        ]
+    },
+    {
+        "scene_number": 3,
+        "dialogue": [
+            {
+                "character": "MAYA",
+                "line": "This is it, Tom. We've done everything we can, and now it's time for the town to see the truth."
+            },
+            {
+                "character": "TOM",
+                "line": "I never doubted us, Maya. Our courage brought this to light, and now we stand here together, hopeful."
+            },
+            {
+                "character": "MAYA",
+                "line": "The town\u2019s trust is fragile, but I believe in us\u2014our honesty has planted the seed for real change."
+            },
+            {
+                "character": "TOM",
+                "line": "Let's hope the people embrace this and that the leaders listen. Our fight isn\u2019t over, but today, we\u2019ve won a victory for integrity."
+            }
+        ]
+    }
+]

@@ -3,16 +3,22 @@ from .prompt import prompt
 from sqlalchemy.orm import Session
 from agents.base_llms import State
 from agents.script_writter.prompt import prompt
+from agents.script_writter.prompt2 import prompt as prompt2
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.graph import StateGraph, END, START
 
 from src.agents.abstract import ChildAgentABC, logger
 
+from langchain_core.output_parsers.json import JsonOutputParser
+from langchain_community.llms.fake import FakeListLLM
+import json
+from db_ops.scripts import ScriptOperations
+from schemas.scripts import CreateScript
 
-
-class ScriptWriterAgent(ChildAgentABC):
+class ScriptWriterAgent(ChildAgentABC, index=2):
     def __init__(self, db: Session, user_id: str) -> None:
         self.db: Session = db
+        self.fake = True
         self.user_id: str = user_id
         super().__init__()
 
@@ -20,33 +26,60 @@ class ScriptWriterAgent(ChildAgentABC):
     @property
     def prompt(self) -> ChatPromptTemplate:
         return ChatPromptTemplate.from_template(
-            prompt
+            prompt2
         )
     
     @property
     def chain(self):
-        return self.prompt | self.llm
+        return self.prompt | self.llm | JsonOutputParser()
     
-    def generate_script(self, state: State) -> State:
+    @property
+    def fake_llm(self):
+        with open("final_script.json", "r") as f:
+            script_list = json.loads(f.read())
+        responses = [json.dumps(scene) for scene in script_list]
+        return FakeListLLM(responses=responses)
+    
+    @property
+    def fake_chain(self):
+        return self.prompt | self.fake_llm | JsonOutputParser()
+    
+    
+    def generate_script(self, state: State) -> dict:
         """
-        Generate a short creative story based on the topic using the LLM chain.
+        Generate a short movie script based on the story using the LLM chain.
         """
         logger.info(f"Generating script from script writer with state {state}")
-        state['script'] = "In a galaxy far, far away..."
-        # response = self.chain.invoke({"story": state["story"]})
-        # state["script"] = response
-        return state
+        generated_scenes = []
+        prompt_input = {"story": state["story"], "generated_scenes": generated_scenes, "next_scene_number": 1}
+        chain = self.chain if not self.fake else self.fake_chain
+        for scene_num in range(1, 4):
+            prompt_input["generated_scenes"] = json.dumps(generated_scenes)
+            prompt_input["next_scene_number"] = scene_num
+            response = chain.invoke(prompt_input)
+            generated_scenes.append(response)
+            logger.info(f"Generated scene {scene_num}: {response}")
+            prompt_input['next_scene_number'] += 1
+        
+        return {"script": generated_scenes }
 
-    def add_to_database(self, state: State) -> State:
+    def add_to_database(self, state: State) -> dict:
         """
         Stores the story into a database (placeholder for real integration).
         """
         logger.info(f"Add to database in script writer with state {state}")
-        # print("add_to_database called with kwargs:", state)
-        # print(f"Storing script in the database... (script: {state['script']}...)")
-        # Here you would add the logic to store the script in the database
-        # For example:
-        return state
+        with open("final_script.json", "w") as f:
+            json.dump(state["script"], f, indent=4)
+        script_ops = ScriptOperations(self.db)
+        for script_scene in state["script"]:
+            logger.info(f"Storing scene {script_scene['scene_number']} in the database...")
+            script_obj = CreateScript(
+                story_id=state["story_id"],
+                scene_number=script_scene["scene_number"],
+                dialogues=script_scene["dialogue"]
+            )
+            script_ops.create_script(script_data=script_obj)
+        return {}
 
     def run(self, state: State) -> dict:
         """

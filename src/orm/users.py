@@ -1,31 +1,26 @@
-from sqlalchemy.orm import Session
-from models.users import User, BlockList
+
+from sqlalchemy import String, Text, ForeignKey
+from sqlalchemy.orm import relationship, Mapped, mapped_column
+
+from db import Base
 
 
-class UserOperations:
-    def __init__(self, db_session: Session) -> None:
-        self.db_session = db_session
+class User(Base):
+    __tablename__ = "users"
 
-    def get_user(self, user_id: str) -> User:
-        return self.db_session.query(User).filter(User.user_id == user_id).first()
+    user_id: Mapped[str] = mapped_column(String, primary_key=True, index=True)
+    email_address: Mapped[str] = mapped_column(String, index=True, nullable=False)
+    topic: Mapped[str] = mapped_column(Text, nullable=False)
+    ip: Mapped[str] = mapped_column(String, nullable=False)
+    character_count: Mapped[int] = mapped_column(default=2, nullable=False)
+    story: Mapped["Story"] = relationship("Story", back_populates="user", uselist=False)
 
-    def create_user(self, user: User) -> User:
-        self.db_session.add(user)
-        self.db_session.commit()
-        self.db_session.refresh(user)
-        return user
 
-    def ban_user(self, ip: str) -> BlockList:
-        banned_ip = BlockList(ip=ip)
-        self.db_session.add(banned_ip)
-        self.db_session.commit()
-        self.db_session.refresh(banned_ip)
-        return banned_ip
 
-    def check_ban(self, ip: str) -> bool:
-        banned_ip = self.db_session.query(BlockList).filter(BlockList.ip == ip).first()
-        return banned_ip is not None
 
-    def check_email_exists(self, email: str) -> bool:
-        existing_user = self.db_session.query(User).filter(User.email_address == email).first()
-        return existing_user is not None
+
+class BlockList(Base):
+    __tablename__ = "blocklist"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    ip: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
