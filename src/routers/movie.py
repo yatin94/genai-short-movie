@@ -2,12 +2,18 @@ from fastapi import APIRouter, Request, Depends, WebSocketDisconnect, WebSocket
 from schemas.movie import MovieRequest, MovieResponse
 from uuid import uuid4
 from db_ops.users import UserOperations, User
+from db_ops.logging import UserStateOperations
 from db import get_db
 from sqlalchemy.orm import Session
 import asyncio
 from fastapi import BackgroundTasks
 from functions.bg_tasks import call_parent_agent_factory
 from db_ops.logging import BgTaskOperations
+from src.db_ops.logging import UserStateOperations
+from src.db_ops.stories import StoryOperations
+from src.db_ops.scripts import SceneOperations
+
+
 
 router = APIRouter()
 
@@ -40,44 +46,92 @@ async def create_movie(movie_req: MovieRequest, background_tasks: BackgroundTask
         db=db
     )
     BgTaskOperations(db).create_bg_task(movie_req.topic, user.user_id)
+    UserStateOperations(db).create_request_state(comment="Background Task Submitted.", user_id=user.user_id, status="success")
     print("Background task for story generation has been initiated.")
     return MovieResponse(message="Movie request created successfully for topic: " + movie_req.topic, user_id=user.user_id)
 
 
 
-@router.websocket("/ws/{user_id}")
-async def websocket_endpoint(websocket: WebSocket, user_id: str, db: Session = Depends(get_db)):
+@router.websocket("/logs/{user_id}")
+async def get_logs(websocket: WebSocket, user_id: str, db: Session = Depends(get_db)):
     await websocket.accept()
     user_operations = UserOperations(db)
-    topic = user_operations.get_user(user_id).topic
-
+    last_message = ""
+    user_obj = user_operations.get_user(user_id)
+    
+    if not user_obj:
+        await asyncio.sleep(30)
+        await websocket.send_json({"message": "Invalid user ID."})
+        await websocket.close()
+        return
+    
     try:
         while True:
-            # topic = user_operations.get_user(user_id).topic
-            await websocket.send_json({"message": "Movie request created successfully for topic: " + topic})
-            await asyncio.sleep(10)
+            if websocket.client_state.name != "CONNECTED":
+                await websocket.close()
+                break
+            if not last_message:
+                all_messages = UserStateOperations(db).get_all_request_states(user_id)
+                for msg in reversed(all_messages):
+                    await websocket.send_json({"message": msg.comment, "status": msg.status.value})
+                    await asyncio.sleep(2)
+                last_message = all_messages[-1].comment if all_messages else ""
+                await asyncio.sleep(20)
+
+            messages = UserStateOperations(db).get_request_state(user_id)
+            if messages and messages.comment != last_message:
+                last_message = messages.comment
+                await websocket.send_json({"message": last_message, "status": messages.status.value})
+                await asyncio.sleep(10)
+            else:
+                await asyncio.sleep(10)
+            
 
     except WebSocketDisconnect:
         print("Client disconnected")
 
-# @router.websocket("/ws/{user_id}")
-# async def websocket_endpoint(user_id: str, websocket: WebSocket):
-#     await websocket.accept()
-#     try:
-#         teller_obj = StoryTellerAgent(
-#             topic=request.topic, user_id="test_user", characters_count=request.characters
-#         )
-#         await teller_obj.run()
-#         while True:
+
+
+
+@router.websocket("/data/{user_id}")
+async def get_real_time_data(websocket: WebSocket, user_id: str, db: Session = Depends(get_db)):
+    await websocket.accept()
+    user_operations = UserOperations(db)
+    user_obj = user_operations.get_user(user_id)
+    
+    if not user_obj:
+        await asyncio.sleep(30)
+        await websocket.send_json({"message": "Invalid user ID."})
+        await websocket.close()
+        return
+    
+    story_sent = False
+    story_id = 0
+    scene_sent = False
+    
+    try:
+        while True:
+            if websocket.client_state.name != "CONNECTED":
+                await websocket.close()
+                break
+            if not story_sent:
+                story_obj = StoryOperations(db)
+                story_object = story_obj.get_story(user_id)
+                if story_object:
+                    story_id = story_object.id
+                    await websocket.send_json({"story": story_object.story_text})
+                    story_sent = True
+                await asyncio.sleep(10)
+            elif not scene_sent:
+                script_ops = SceneOperations(db)
+                script_object: list = script_ops.get_scene_with_dialogues(story_id)
+                if script_object:
+                    for script in script_object:
+                        await websocket.send_json({"script": script})
+                    scene_sent = True
+                await asyncio.sleep(10)
             
-#             topic = data.get("topic")
-#             characters = data.get("characters", 2)
-#             movie_summary = {"movie_topic": topic, "characters": characters, "id": str(uuid4())}
-#             database.append(movie_summary)
-#             await websocket.send_json({"message": "Movie request created successfully for topic: " + topic})
-#     except WebSocketDisconnect:
-#         print("Client disconnected")
 
-
-
+    except WebSocketDisconnect:
+        print("Client disconnected")
 

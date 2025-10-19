@@ -5,7 +5,7 @@ from src.agents.base_llms import State, logger
 
 from src.agents.abstract import ChildAgentABC
 from typing import List, Callable
-
+from src.db_ops.logging import UserStateOperations
 
 
 class ParentGraphAgent:
@@ -14,6 +14,8 @@ class ParentGraphAgent:
         self.user_id = user_id
         self.topic = topic
         self.characters_count = characters_count  # Default value, can be parameterized
+        UserStateOperations(db_session).create_request_state(comment="Parent Graph initiated.", user_id=self.user_id, status="success")
+
     
 
     def _initiate_child_agents(self):
@@ -54,17 +56,18 @@ class ParentGraphAgent:
 
         # Instantiate agents
         self._add_child_nodes(parent_graph)
+        UserStateOperations(self.db_session).create_request_state(comment="Children nodes added.", user_id=self.user_id, status="success")
+
         logger.info(f"Child nodes added for user - {self.user_id}")
 
         app = parent_graph.compile()
         logger.info(f"Parent graph compiled added for user - {self.user_id}")
+        UserStateOperations(self.db_session).create_request_state(comment="Parent node Compiled.", user_id=self.user_id, status="success")
+
 
         result = app.invoke(
             {
                 "topic": self.topic,
-                "story": None,
-                "script": None,
-                "story_id": None
             }
         )
         return result

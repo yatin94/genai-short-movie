@@ -1,17 +1,38 @@
 from sqlalchemy.orm import Session
 from orm.stories import StoryScenes, Dialogue
 from schemas.scripts import CreateScript
+from typing import List
 
-class ScriptOperations:
+
+
+class SceneOperations:
     def __init__(self, db_session: Session) -> None:
         self.db_session = db_session
 
-    def get_script(self, script_id: int) -> StoryScenes:
+    def get_scene(self, story_id: int) -> List[StoryScenes]:
         """
         Get script and its dialogues by ID.
         """
-        scripts = self.db_session.query(StoryScenes).filter(StoryScenes.id == script_id).first()
+        scripts = self.db_session.query(StoryScenes).filter(StoryScenes.story_id == story_id).all()
         return scripts
+    
+    def get_scene_with_dialogues(self, story_id: int):
+        """
+        Get script along with its dialogues by scene ID.
+        """
+        all_diaglogues = []
+        scenes = self.db_session.query(StoryScenes).filter(StoryScenes.story_id == story_id).all()
+        if scenes:
+            for scene in scenes:
+                scene_data = [f'Scene : {scene.scene_number}']
+                dialogues = self.db_session.query(Dialogue).filter(Dialogue.scene_id == scene.id).all()
+                if dialogues:
+                    for dialogue in dialogues:
+                        scene_data.append(f"\n{dialogue.character}: {dialogue.line}")
+                all_diaglogues.append("\n".join(scene_data))
+
+        
+        return all_diaglogues
 
     def create_script(self, script_data: CreateScript) -> StoryScenes:
         print("Creating script in DB:", script_data)

@@ -9,7 +9,7 @@ from src.agents.abstract import ChildAgentABC, logger
 from langchain_community.llms.fake import FakeListLLM
 from orm.stories import Story
 from db_ops.stories import StoryOperations
-
+from src.db_ops.logging import UserStateOperations
 
 
 class StoryTellerAgent(ChildAgentABC, index=1):
@@ -17,6 +17,8 @@ class StoryTellerAgent(ChildAgentABC, index=1):
         self.db: Session = db
         self.user_id: str = user_id
         self.fake = True
+        UserStateOperations(self.db).create_request_state(comment="Story Writer Agent Initiated.", user_id=self.user_id, status="success")
+
         super().__init__()
     
     
@@ -33,7 +35,7 @@ class StoryTellerAgent(ChildAgentABC, index=1):
         """
         return FakeListLLM(responses=[
             story_text
-        ])
+        ], sleep=10)
     
     @property
     def chain(self):
@@ -55,6 +57,8 @@ class StoryTellerAgent(ChildAgentABC, index=1):
         else:
             response = self.chain.invoke({"topic": state["topic"], "characters_count": self.characters_count})
         logger.info(f"LLM response: {response}")
+        UserStateOperations(self.db).create_request_state(comment="Story Generated.", user_id=self.user_id, status="success")
+
         return {"story": response}
 
 
@@ -68,6 +72,8 @@ class StoryTellerAgent(ChildAgentABC, index=1):
             story_text=state['story']
         )
         StoryOperations(self.db).create_story(story_obj)
+        UserStateOperations(self.db).create_request_state(comment="Story Added to database.", user_id=self.user_id, status="success")
+
         return {"story_id": story_obj.id}
     
 

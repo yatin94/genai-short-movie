@@ -12,14 +12,20 @@ from src.agents.abstract import ChildAgentABC, logger
 from langchain_core.output_parsers.json import JsonOutputParser
 from langchain_community.llms.fake import FakeListLLM
 import json
-from db_ops.scripts import ScriptOperations
+from db_ops.scripts import SceneOperations
 from schemas.scripts import CreateScript
+from src.db_ops.logging import UserStateOperations
+
+
+
 
 class ScriptWriterAgent(ChildAgentABC, index=2):
     def __init__(self, db: Session, user_id: str) -> None:
         self.db: Session = db
         self.fake = True
         self.user_id: str = user_id
+        UserStateOperations(self.db).create_request_state(comment="Script Agent initialised", user_id=self.user_id, status="success")
+
         super().__init__()
 
 
@@ -38,7 +44,7 @@ class ScriptWriterAgent(ChildAgentABC, index=2):
         with open("final_script.json", "r") as f:
             script_list = json.loads(f.read())
         responses = [json.dumps(scene) for scene in script_list]
-        return FakeListLLM(responses=responses)
+        return FakeListLLM(responses=responses, sleep=10)
     
     @property
     def fake_chain(self):
@@ -61,6 +67,7 @@ class ScriptWriterAgent(ChildAgentABC, index=2):
             logger.info(f"Generated scene {scene_num}: {response}")
             prompt_input['next_scene_number'] += 1
         
+        UserStateOperations(self.db).create_request_state(comment="Script generated", user_id=self.user_id, status="success")
         return {"script": generated_scenes }
 
     def add_to_database(self, state: State) -> dict:
@@ -70,7 +77,7 @@ class ScriptWriterAgent(ChildAgentABC, index=2):
         logger.info(f"Add to database in script writer with state {state}")
         with open("final_script.json", "w") as f:
             json.dump(state["script"], f, indent=4)
-        script_ops = ScriptOperations(self.db)
+        script_ops = SceneOperations(self.db)
         for script_scene in state["script"]:
             logger.info(f"Storing scene {script_scene['scene_number']} in the database...")
             script_obj = CreateScript(
@@ -79,6 +86,8 @@ class ScriptWriterAgent(ChildAgentABC, index=2):
                 dialogues=script_scene["dialogue"]
             )
             script_ops.create_script(script_data=script_obj)
+        UserStateOperations(self.db).create_request_state(comment="Script Added to database", user_id=self.user_id, status="success")
+        
         return {}
 
     def run(self, state: State) -> dict:

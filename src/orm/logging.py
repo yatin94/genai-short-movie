@@ -4,12 +4,20 @@ from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from db import Base
 from datetime import datetime
+import enum
+from sqlalchemy import Enum
 
+
+class StatusEnum(enum.Enum):
+    success = "success"
+    error = "error"
 
 class RequestState(Base):
     __tablename__ = "request_state"
-    user_id: Mapped[str] = mapped_column(String, primary_key=True, index=True)
+    user_id: Mapped[str] = mapped_column(String, index=True)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
     comment: Mapped[str] = mapped_column(String)
+    status: Mapped[StatusEnum] = mapped_column(Enum(StatusEnum), nullable=False)  # Use Enum here
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 

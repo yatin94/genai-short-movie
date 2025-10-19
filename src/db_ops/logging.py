@@ -16,3 +16,36 @@ class BgTaskOperations:
         self.db_session.commit()
         self.db_session.refresh(bg_task)
         return bg_task
+
+
+class UserStateOperations:
+    def __init__(self, db_session: Session) -> None:
+        self.db_session = db_session
+
+
+    def create_request_state(self, comment: str, user_id: str, status: str) -> RequestState:
+        request_state = RequestState(
+            user_id = user_id,
+            comment = comment,
+            status = status
+        )
+        self.db_session.add(request_state)
+        self.db_session.commit()
+        self.db_session.refresh(request_state)
+        return request_state
+    
+    def get_request_state(self, user_id: str) -> RequestState | None:
+        return (
+            self.db_session.query(RequestState)
+            .filter(RequestState.user_id == user_id)
+            .order_by(RequestState.created_at.desc())
+            .first()
+        )
+    
+    def get_all_request_states(self, user_id: str) -> list[RequestState]:
+        return (
+            self.db_session.query(RequestState)
+            .filter(RequestState.user_id == user_id)
+            .order_by(RequestState.created_at.desc())
+            .all()
+        )

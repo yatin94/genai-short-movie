@@ -6,8 +6,8 @@ class StoryOperations:
     def __init__(self, db_session: Session) -> None:
         self.db_session = db_session
 
-    def get_story(self, story_id: int) -> Story:
-        return self.db_session.query(Story).filter(Story.id == story_id).first()
+    def get_story(self, user_id: str) -> Story:
+        return self.db_session.query(Story).filter(Story.user_id == user_id).first()
 
     def create_story(self, story: Story) -> Story:
         print("Creating story in DB:", story)
