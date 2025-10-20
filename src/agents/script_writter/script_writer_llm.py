@@ -7,7 +7,7 @@ from agents.script_writter.prompt2 import prompt as prompt2
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.graph import StateGraph, END, START
 
-from src.agents.abstract import ChildAgentABC, logger
+from src.agents.abstract import ChildAgentABC
 
 from langchain_core.output_parsers.json import JsonOutputParser
 from langchain_community.llms.fake import FakeListLLM
@@ -23,10 +23,8 @@ class ScriptWriterAgent(ChildAgentABC, index=2):
     def __init__(self, db: Session, user_id: str) -> None:
         self.db: Session = db
         self.fake = True
-        self.user_id: str = user_id
-        UserStateOperations(self.db).create_request_state(comment="Script Agent initialised", user_id=self.user_id, status="success")
-
-        super().__init__()
+        UserStateOperations(self.db).create_request_state(comment="Script Agent initialised", user_id=user_id, status="success")
+        super().__init__(user_id=user_id)
 
 
     @property
@@ -55,7 +53,7 @@ class ScriptWriterAgent(ChildAgentABC, index=2):
         """
         Generate a short movie script based on the story using the LLM chain.
         """
-        logger.info(f"Generating script from script writer with state {state}")
+        self.logger.info(f"Generating script from script writer with state {state}")
         generated_scenes = []
         prompt_input = {"story": state["story"], "generated_scenes": generated_scenes, "next_scene_number": 1}
         chain = self.chain if not self.fake else self.fake_chain
@@ -64,7 +62,7 @@ class ScriptWriterAgent(ChildAgentABC, index=2):
             prompt_input["next_scene_number"] = scene_num
             response = chain.invoke(prompt_input)
             generated_scenes.append(response)
-            logger.info(f"Generated scene {scene_num}: {response}")
+            self.logger.info(f"Generated scene {scene_num}: {response}")
             prompt_input['next_scene_number'] += 1
         
         UserStateOperations(self.db).create_request_state(comment="Script generated", user_id=self.user_id, status="success")
@@ -74,12 +72,12 @@ class ScriptWriterAgent(ChildAgentABC, index=2):
         """
         Stores the story into a database (placeholder for real integration).
         """
-        logger.info(f"Add to database in script writer with state {state}")
+        self.logger.info(f"Add to database in script writer with state {state}")
         with open("final_script.json", "w") as f:
             json.dump(state["script"], f, indent=4)
         script_ops = SceneOperations(self.db)
         for script_scene in state["script"]:
-            logger.info(f"Storing scene {script_scene['scene_number']} in the database...")
+            self.logger.info(f"Storing scene {script_scene['scene_number']} in the database...")
             script_obj = CreateScript(
                 story_id=state["story_id"],
                 scene_number=script_scene["scene_number"],

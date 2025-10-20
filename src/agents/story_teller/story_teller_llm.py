@@ -5,21 +5,21 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers.string import StrOutputParser
 
 from langgraph.graph import StateGraph, END
-from src.agents.abstract import ChildAgentABC, logger
+from src.agents.abstract import ChildAgentABC
 from langchain_community.llms.fake import FakeListLLM
 from orm.stories import Story
 from db_ops.stories import StoryOperations
 from src.db_ops.logging import UserStateOperations
 
 
+
 class StoryTellerAgent(ChildAgentABC, index=1):
     def __init__(self, db: Session, user_id: str):
         self.db: Session = db
-        self.user_id: str = user_id
         self.fake = True
-        UserStateOperations(self.db).create_request_state(comment="Story Writer Agent Initiated.", user_id=self.user_id, status="success")
+        UserStateOperations(self.db).create_request_state(comment="Story Writer Agent Initiated.", user_id=user_id, status="success")
 
-        super().__init__()
+        super().__init__(user_id=user_id)
     
     
     @property
@@ -50,13 +50,13 @@ class StoryTellerAgent(ChildAgentABC, index=1):
         """
         Generate a short creative story based on the topic using the LLM chain.
         """
-        logger.info(f"Generating story from story teller with state {state}")
+        self.logger.info(f"Generating story from story teller with state {state}")
         if self.fake:
-            logger.info("Using fake LLM for story generation")
+            self.logger.info("Using fake LLM for story generation")
             response = self.fake_chain.invoke({"topic": state["topic"], "characters_count": self.characters_count})
         else:
             response = self.chain.invoke({"topic": state["topic"], "characters_count": self.characters_count})
-        logger.info(f"LLM response: {response}")
+        self.logger.info(f"LLM response: {response}")
         UserStateOperations(self.db).create_request_state(comment="Story Generated.", user_id=self.user_id, status="success")
 
         return {"story": response}
@@ -66,7 +66,7 @@ class StoryTellerAgent(ChildAgentABC, index=1):
         """
         Stores the story into a database (placeholder for real integration).
         """
-        logger.info(f"Adding to db from story teller with state {state}")
+        self.logger.info(f"Adding to db from story teller with state {state}")
         story_obj = Story(
             user_id=self.user_id,
             story_text=state['story']

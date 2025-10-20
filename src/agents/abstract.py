@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from langgraph.graph import StateGraph
 from langchain_core.prompts import ChatPromptTemplate
-from src.agents.base_llms import openai_llm, State, logger
+from src.agents.base_llms import openai_llm, State
+from src.log_mechs import get_user_logger
 
 from langchain_core.runnables.base import RunnableSerializable
 from langgraph.graph.state import CompiledStateGraph
@@ -12,7 +13,9 @@ from typing import List
 class ChildAgentABC(ABC):
     agent_index: List = []
 
-    def __init__(self, characters_count: int = 2) -> None:
+    def __init__(self, user_id: str, characters_count: int = 2) -> None:
+        self.logger = get_user_logger(user_id)
+        self.user_id: str = user_id
         self.app: CompiledStateGraph = self.compile_graph()
         self.characters_count: int = characters_count  # Default value, can be parameterized
         super().__init__()
@@ -49,7 +52,7 @@ class ChildAgentABC(ABC):
         pass
 
     def compile_graph(self) -> CompiledStateGraph:
-        logger.info("Compiling Graph")
+        self.logger.info("Compiling Graph")
         workflow_state = self.get_graph()
         app = workflow_state.compile(debug=True)
         return app
