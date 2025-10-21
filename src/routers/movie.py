@@ -68,7 +68,7 @@ async def get_logs(websocket: WebSocket, user_id: str, db: Session = Depends(get
         while True:
             # Check for inactivity
             if (datetime.now() - last_connected).seconds > inactivity_limit:
-                await websocket.send_json({"message": "Disconnected due to inactivity."})
+                # await websocket.send_json({"message": "Disconnected due to inactivity."})
                 await websocket.close()
                 break
 
@@ -115,7 +115,7 @@ async def get_real_time_data(websocket: WebSocket, user_id: str, db: Session = D
         while True:
             # Check for inactivity
             if (datetime.now() - last_connected).seconds > inactivity_limit:
-                await websocket.send_json({"message": "Disconnected due to inactivity."})
+                # await websocket.send_json({"message": "Disconnected due to inactivity."})
                 await websocket.close()
                 break
 
