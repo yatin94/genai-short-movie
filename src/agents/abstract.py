@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from langgraph.graph import StateGraph
 from langchain_core.prompts import ChatPromptTemplate
-from src.agents.base_llms import openai_llm, State
-from src.log_mechs import get_user_logger
+from agents.base_llms import openai_llm, State
+from log_mechs import get_user_logger
 
 from langchain_core.runnables.base import RunnableSerializable
 from langgraph.graph.state import CompiledStateGraph

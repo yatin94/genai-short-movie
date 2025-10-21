@@ -1,13 +1,13 @@
 from langgraph.graph import StateGraph, END
 from orm.users import User
-from src.agents.story_teller.story_teller_llm import StoryTellerAgent
-from src.agents.script_writter.script_writer_llm import ScriptWriterAgent
-from src.agents.base_llms import State
-from src.log_mechs import get_user_logger
+from agents.story_teller.story_teller_llm import StoryTellerAgent
+from agents.script_writter.script_writer_llm import ScriptWriterAgent
+from agents.base_llms import State
+from log_mechs import get_user_logger
 
-from src.agents.abstract import ChildAgentABC
+from agents.abstract import ChildAgentABC
 from typing import List, Callable
-from src.db_ops.logging import UserStateOperations
+from db_ops.logging import UserStateOperations
 
 
 class ParentGraphAgent:
@@ -22,7 +22,6 @@ class ParentGraphAgent:
     
 
     def _initiate_child_agents(self):
-
         for agent_class in ChildAgentABC.agent_index:
             agent: ChildAgentABC  = agent_class(user_id=self.user_id, db=self.db_session)
             yield agent_class.__name__, agent
@@ -86,3 +85,9 @@ class ParentGraphAgent:
         return result
         
         
+if __name__ == "__main__":
+    from db import SessionLocal
+    db = SessionLocal()
+    parent_agent = ParentGraphAgent(db_session=db, user_id="user_123", topic="A thrilling adventure in space")
+    output = parent_agent.run()
+    print("Final Output:", output)

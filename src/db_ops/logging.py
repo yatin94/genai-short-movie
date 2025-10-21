@@ -42,10 +42,11 @@ class UserStateOperations:
             .first()
         )
     
-    def get_all_request_states(self, user_id: str) -> list[RequestState]:
+    def get_all_request_states(self, user_id: str, exclude_ids = []) -> list[RequestState]:
         return (
             self.db_session.query(RequestState)
             .filter(RequestState.user_id == user_id)
-            .order_by(RequestState.created_at.desc())
+            .filter(RequestState.id.notin_(exclude_ids))
+            .order_by(RequestState.id.asc())
             .all()
         )

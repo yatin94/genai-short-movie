@@ -42,13 +42,6 @@ async def create_movie(movie_req: MovieRequest, background_tasks: BackgroundTask
     get_user_logger(user.user_id).info(f"User created with ID: {user.user_id}, Email: {user.email_address}, Topic: {user.topic}, IP: {user.ip}")
     call_parent_agent_factory.delay(topic=movie_req.topic, user_id=user.user_id, characters_count=movie_req.characters) # type: ignore
 
-    # background_tasks.add_task(
-    #     func=call_parent_agent_factory, 
-    #     topic=movie_req.topic, 
-    #     user_id=user.user_id, 
-    #     characters_count=movie_req.characters,
-    #     db=db
-    # )
     BgTaskOperations(db).create_bg_task(movie_req.topic, user.user_id)
     UserStateOperations(db).create_request_state(comment="Background Task Submitted.", user_id=user.user_id, status="success")
     print("Background task for story generation has been initiated.")
@@ -59,7 +52,7 @@ async def create_movie(movie_req: MovieRequest, background_tasks: BackgroundTask
 async def get_logs(websocket: WebSocket, user_id: str, db: Session = Depends(get_db)):
     await websocket.accept()
     user_operations = UserOperations(db)
-    last_message = ""
+    id_sent = []
     user_obj = user_operations.get_user(user_id)
     
     if not user_obj:
@@ -85,24 +78,13 @@ async def get_logs(websocket: WebSocket, user_id: str, db: Session = Depends(get
                 break
 
             # Send all previous messages on first connect
-            if not last_message:
-                all_messages = UserStateOperations(db).get_all_request_states(user_id)
-                for msg in reversed(all_messages):
-                    await websocket.send_json({"message": msg.comment, "status": msg.status.value})
-                    await asyncio.sleep(1)
-                    last_connected = datetime.now()
-                last_message = all_messages[-1].comment if all_messages else ""
+            all_messages = UserStateOperations(db).get_all_request_states(user_id, exclude_ids=id_sent)
+            for msg in all_messages:
+                await websocket.send_json({"message": msg.comment, "status": msg.status.value})
                 await asyncio.sleep(1)
-
-            # Send new messages if available
-            messages = UserStateOperations(db).get_request_state(user_id)
-            if messages and messages.comment != last_message:
-                last_message = messages.comment
-                await websocket.send_json({"message": last_message, "status": messages.status.value})
+                id_sent.append(msg.id)
                 last_connected = datetime.now()
-                await asyncio.sleep(1)
-            else:
-                await asyncio.sleep(1)
+            await asyncio.sleep(1)
 
     except WebSocketDisconnect:
         get_user_logger(user_id).info("Client disconnected")
@@ -153,7 +135,7 @@ async def get_real_time_data(websocket: WebSocket, user_id: str, db: Session = D
                     last_connected = datetime.now()
                 await asyncio.sleep(1)
             # Send scenes if not sent
-            elif not scene_sent:
+            if not scene_sent:
                 script_ops = SceneOperations(db)
                 script_object: list = script_ops.get_scene_with_dialogues(story_id)
                 if script_object:

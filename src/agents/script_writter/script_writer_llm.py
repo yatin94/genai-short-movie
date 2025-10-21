@@ -7,14 +7,14 @@ from agents.script_writter.prompt2 import prompt as prompt2
 from langchain_core.prompts import ChatPromptTemplate
 from langgraph.graph import StateGraph, END, START
 
-from src.agents.abstract import ChildAgentABC
+from agents.abstract import ChildAgentABC
 
 from langchain_core.output_parsers.json import JsonOutputParser
 from langchain_community.llms.fake import FakeListLLM
 import json
 from db_ops.scripts import SceneOperations
 from schemas.scripts import CreateScript
-from src.db_ops.logging import UserStateOperations
+from db_ops.logging import UserStateOperations
 
 
 

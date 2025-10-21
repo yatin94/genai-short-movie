@@ -5,11 +5,11 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers.string import StrOutputParser
 
 from langgraph.graph import StateGraph, END
-from src.agents.abstract import ChildAgentABC
+from agents.abstract import ChildAgentABC
 from langchain_community.llms.fake import FakeListLLM
 from orm.stories import Story
 from db_ops.stories import StoryOperations
-from src.db_ops.logging import UserStateOperations
+from db_ops.logging import UserStateOperations
 
 
 
