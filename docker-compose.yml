@@ -36,7 +36,6 @@ services:
     build: .
     container_name: genai-short-movie-worker
     command: poetry run celery -A src.celery_worker.celery_app worker -Q llm_queue --loglevel=info
-
     volumes:
       - .:/FastAPI
     environment:
@@ -50,3 +49,16 @@ services:
     depends_on:
       - db
       - redis
+
+  flower:
+    build: .
+    container_name: genai-short-movie-flower
+    command: poetry run celery -A src.celery_worker.celery_app flower --port=5555
+    volumes:
+      - .:/FastAPI
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    depends_on:
+      - worker

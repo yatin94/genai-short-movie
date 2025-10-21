@@ -14,6 +14,7 @@ from src.db_ops.stories import StoryOperations
 from src.db_ops.scripts import SceneOperations
 from src.bg_tasks import call_parent_agent_factory
 from src.log_mechs import get_user_logger
+from datetime import datetime
 
 router = APIRouter()
 
@@ -54,7 +55,6 @@ async def create_movie(movie_req: MovieRequest, background_tasks: BackgroundTask
     return MovieResponse(message="Movie request created successfully for topic: " + movie_req.topic, user_id=user.user_id)
 
 
-
 @router.websocket("/logs/{user_id}")
 async def get_logs(websocket: WebSocket, user_id: str, db: Session = Depends(get_db)):
     await websocket.accept()
@@ -63,36 +63,51 @@ async def get_logs(websocket: WebSocket, user_id: str, db: Session = Depends(get
     user_obj = user_operations.get_user(user_id)
     
     if not user_obj:
-        await asyncio.sleep(30)
         await websocket.send_json({"message": "Invalid user ID."})
         await websocket.close()
         return
-    
+
+    get_user_logger(user_id).info("Client connected for logs")
+    inactivity_limit = 60  # seconds
+    last_connected = datetime.now()
+
     try:
         while True:
+            # Check for inactivity
+            if (datetime.now() - last_connected).seconds > inactivity_limit:
+                await websocket.send_json({"message": "Disconnected due to inactivity."})
+                await websocket.close()
+                break
+
+            # Check connection state
             if websocket.client_state.name != "CONNECTED":
                 await websocket.close()
                 break
+
+            # Send all previous messages on first connect
             if not last_message:
                 all_messages = UserStateOperations(db).get_all_request_states(user_id)
                 for msg in reversed(all_messages):
                     await websocket.send_json({"message": msg.comment, "status": msg.status.value})
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(1)
+                    last_connected = datetime.now()
                 last_message = all_messages[-1].comment if all_messages else ""
-                await asyncio.sleep(20)
+                await asyncio.sleep(1)
 
+            # Send new messages if available
             messages = UserStateOperations(db).get_request_state(user_id)
             if messages and messages.comment != last_message:
                 last_message = messages.comment
                 await websocket.send_json({"message": last_message, "status": messages.status.value})
+                last_connected = datetime.now()
                 await asyncio.sleep(1)
             else:
                 await asyncio.sleep(1)
-            
 
     except WebSocketDisconnect:
-        print("Client disconnected")
-
+        get_user_logger(user_id).info("Client disconnected")
+    finally:
+        get_user_logger(user_id).info("WebSocket connection closed")
 
 
 
@@ -103,20 +118,31 @@ async def get_real_time_data(websocket: WebSocket, user_id: str, db: Session = D
     user_obj = user_operations.get_user(user_id)
     
     if not user_obj:
-        await asyncio.sleep(30)
         await websocket.send_json({"message": "Invalid user ID."})
         await websocket.close()
         return
-    
+
     story_sent = False
     story_id = 0
     scene_sent = False
-    
+    inactivity_limit = 60  # seconds
+    last_connected = datetime.now()
+    get_user_logger(user_id).info("Client connected for data")
+
     try:
         while True:
+            # Check for inactivity
+            if (datetime.now() - last_connected).seconds > inactivity_limit:
+                await websocket.send_json({"message": "Disconnected due to inactivity."})
+                await websocket.close()
+                break
+
+            # Check connection state
             if websocket.client_state.name != "CONNECTED":
                 await websocket.close()
                 break
+
+            # Send story if not sent
             if not story_sent:
                 story_obj = StoryOperations(db)
                 story_object = story_obj.get_story(user_id)
@@ -124,17 +150,22 @@ async def get_real_time_data(websocket: WebSocket, user_id: str, db: Session = D
                     story_id = story_object.id
                     await websocket.send_json({"story": story_object.story_text})
                     story_sent = True
+                    last_connected = datetime.now()
                 await asyncio.sleep(1)
+            # Send scenes if not sent
             elif not scene_sent:
                 script_ops = SceneOperations(db)
                 script_object: list = script_ops.get_scene_with_dialogues(story_id)
                 if script_object:
                     for script in script_object:
                         await websocket.send_json({"script": script})
+                        last_connected = datetime.now()
                     scene_sent = True
                 await asyncio.sleep(1)
-            
+            else:
+                await asyncio.sleep(1)
 
     except WebSocketDisconnect:
-        print("Client disconnected")
-
+        get_user_logger(user_id).info("Client disconnected")
+    finally:
+        get_user_logger(user_id).info("WebSocket connection closed")
