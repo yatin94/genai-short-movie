@@ -17,7 +17,6 @@ def call_parent_agent_factory(topic: str, user_id: str, characters_count: int, r
         logger.info("Background task started for user_id: {}".format(user_id))
         time.sleep(10)
         logger.info("Session created user_id: {}".format(user_id))
-        raise Exception("Testing error logging in background task")
         from src.agents.parent_graph import ParentGraphAgent
         parent_obj = ParentGraphAgent(
             db_session=db,
