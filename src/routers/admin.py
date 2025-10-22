@@ -1,12 +1,15 @@
 import json
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
-from src.db_ops.users import UserOperations, User, UserRequestOperations
+from pydantic import BaseModel
+from src.db_ops.users import UserOperations, User, UserRequestOperations, AdminUser
 from db import get_db
 from sqlalchemy.orm import Session
 from typing import List, TypedDict
 from pathlib import Path
 import httpx
+from fastapi.exceptions import HTTPException
+from auth.handler import verify_token, create_access_token
 
 
 class UserRequests(TypedDict):
@@ -29,8 +32,24 @@ class AdminDashboardResponse(TypedDict):
 
 router = APIRouter()
 
+class AdminLoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+@router.post("/admin/login")
+def login(admin_login_request: AdminLoginRequest, db: Session = Depends(get_db)):
+    user = db.query(AdminUser).filter(AdminUser.username == admin_login_request.email).first()
+    if not user or not user.verify_password(admin_login_request.password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    access_token = create_access_token({"username": user.username, "id": user.admin_id})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
 @router.get("/admin", response_class=JSONResponse)
-async def admin_dashboard(db: Session = Depends(get_db)) -> JSONResponse:
+async def admin_dashboard(db: Session = Depends(get_db), token_data: dict = Depends(verify_token)) -> JSONResponse:
+    
     users: List[User] = UserOperations(db_session=db).get_all_users()
     admin_dashboard_response: AdminDashboardResponse = {
         "users": [
@@ -72,7 +91,7 @@ async def get_bg_status_from_flower(request_id: str) -> str:
         return "NOT_FOUND"
 
 @router.get("/bgstatus/{user_id}/{request_id}", response_class=JSONResponse)
-async def get_user_logs(user_id: str, request_id: str, db: Session = Depends(get_db)) -> JSONResponse:
+async def get_user_logs(user_id: str, request_id: str,token_data: dict = Depends(verify_token), db: Session = Depends(get_db)) -> JSONResponse:
     user_operations = UserOperations(db)
     user_request_operations = UserRequestOperations(db)
     user = user_operations.get_user_by_id(user_id)

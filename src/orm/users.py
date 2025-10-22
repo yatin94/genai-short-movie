@@ -4,6 +4,9 @@ from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from datetime import datetime
 from db import Base
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class User(Base):
@@ -13,6 +16,21 @@ class User(Base):
     email_address: Mapped[str] = mapped_column(String, index=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     requests: Mapped[list["UserRequest"]] = relationship("UserRequest", back_populates="user")
+
+class AdminUser(Base):
+    __tablename__ = "admin_users"
+
+    admin_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String, unique=True, index=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    def set_password(self, password: str):
+        self.password_hash = pwd_context.hash(password)
+
+    def verify_password(self, password: str) -> bool:
+        return pwd_context.verify(password, self.password_hash)
+
 
 class UserRequest(Base):
     __tablename__ = "user_requests"

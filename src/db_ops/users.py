@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from orm.users import UserRequest, User, BlockList
+from orm.users import UserRequest, User, BlockList, AdminUser
 from uuid import uuid4
 
 

@@ -11,7 +11,6 @@ from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 from db import get_db
 
-from prometheus_fastapi_instrumentator import Instrumentator
 
 
 
@@ -34,7 +33,6 @@ fresh_data = []
 app.include_router(movie_router)
 app.include_router(admin_router)
 
-Instrumentator().instrument(app).expose(app)
 
 
 @app.get("/")
