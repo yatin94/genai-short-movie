@@ -13,8 +13,9 @@ from typing import List
 class ChildAgentABC(ABC):
     agent_index: List = []
 
-    def __init__(self, user_id: str, characters_count: int = 2) -> None:
-        self.logger = get_user_logger(user_id)
+    def __init__(self, user_id: str, request_id: str, characters_count: int = 2) -> None:
+        self.logger = get_user_logger(request_id)
+        self.request_id: str = request_id
         self.user_id: str = user_id
         self.app: CompiledStateGraph = self.compile_graph()
         self.characters_count: int = characters_count  # Default value, can be parameterized

@@ -20,11 +20,11 @@ from db_ops.logging import UserStateOperations
 
 
 class ScriptWriterAgent(ChildAgentABC, index=2):
-    def __init__(self, db: Session, user_id: str) -> None:
+    def __init__(self, db: Session, user_id: str, request_id: str) -> None:
         self.db: Session = db
         self.fake = True
-        UserStateOperations(self.db).create_request_state(comment="Script Agent initialised", user_id=user_id, status="success")
-        super().__init__(user_id=user_id)
+        UserStateOperations(self.db).create_request_state(comment="Script Agent initialised", user_id=user_id, status="success", request_id=request_id)
+        super().__init__(user_id=user_id, request_id=request_id)
 
 
     @property
@@ -64,8 +64,8 @@ class ScriptWriterAgent(ChildAgentABC, index=2):
             generated_scenes.append(response)
             self.logger.info(f"Generated scene {scene_num}: {response}")
             prompt_input['next_scene_number'] += 1
-        
-        UserStateOperations(self.db).create_request_state(comment="Script generated", user_id=self.user_id, status="success")
+
+        UserStateOperations(self.db).create_request_state(comment="Script generated", user_id=self.user_id, status="success", request_id=self.request_id)
         return {"script": generated_scenes }
 
     def add_to_database(self, state: State) -> dict:
@@ -84,7 +84,7 @@ class ScriptWriterAgent(ChildAgentABC, index=2):
                 dialogues=script_scene["dialogue"]
             )
             script_ops.create_script(script_data=script_obj)
-        UserStateOperations(self.db).create_request_state(comment="Script Added to database", user_id=self.user_id, status="success")
+        UserStateOperations(self.db).create_request_state(comment="Script Added to database", user_id=self.user_id, status="success", request_id=self.request_id)
         
         return {}
 

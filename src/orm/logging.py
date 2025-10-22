@@ -11,10 +11,12 @@ from sqlalchemy import Enum
 class StatusEnum(enum.Enum):
     success = "success"
     error = "error"
+    pending = "pending"
 
 class RequestState(Base):
     __tablename__ = "request_state"
     user_id: Mapped[str] = mapped_column(String, index=True)
+    request_id: Mapped[str] = mapped_column(String, index=True)
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     comment: Mapped[str] = mapped_column(String)
     status: Mapped[StatusEnum] = mapped_column(Enum(StatusEnum), nullable=False)  # Use Enum here
@@ -23,8 +25,10 @@ class RequestState(Base):
 
 class AllBackgroundTask(Base):
     __tablename__ = "all_background_task"
-    user_id: Mapped[str] = mapped_column(String, primary_key=True, index=True)
+    user_id: Mapped[str] = mapped_column(String, index=True)
+    request_id: Mapped[str] = mapped_column(String, primary_key=True, index=True)
     topic: Mapped[str] = mapped_column(String)
+    status: Mapped[StatusEnum] = mapped_column(Enum(StatusEnum), nullable=False, default=StatusEnum.pending)
     response_url: Mapped[str] = mapped_column(String, nullable=True)
     response: Mapped[str] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

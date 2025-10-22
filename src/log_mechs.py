@@ -1,6 +1,7 @@
 from pathlib import Path
 import logging
 import os
+from pythonjsonlogger import jsonlogger
 
 # Ensure logs directory exists
 LOGS_DIR = Path("logs")
@@ -27,10 +28,11 @@ def get_user_logger(user_id: str) -> logging.Logger:
     logger.addHandler(ch)
 
     # File handler
-    file_path = str(LOGS_DIR / f"{user_id}.log")
-    fh = logging.FileHandler(file_path, encoding="utf-8")
+    file_path = str(LOGS_DIR / f"{user_id}.json")
+    fh = logging.FileHandler(file_path)
     fh.setLevel(logging.INFO)
-    fh.setFormatter(formatter)
+    json_formatter = jsonlogger.JsonFormatter('%(asctime)s %(levelname)s %(message)s')
+    fh.setFormatter(json_formatter)
     logger.addHandler(fh)
 
     # Avoid propagating to root handlers to prevent duplicate logs
@@ -39,5 +41,3 @@ def get_user_logger(user_id: str) -> logging.Logger:
 
     return logger
 
-# Default module logger (writes to logs/default.log). Use get_user_logger(user_id) elsewhere.
-logger = get_user_logger("default")

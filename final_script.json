@@ -3,20 +3,28 @@
         "scene_number": 1,
         "dialogue": [
             {
-                "character": "MAYA",
-                "line": "Look at this, Tom. I found an old ledger hidden behind the town hall's bookshelf. It looks like it contains some secret dealings."
+                "character": "ANNA",
+                "line": "Good afternoon, everyone. Today, I want to talk about something really important\u2014honesty. It\u2019s the foundation of our community."
             },
             {
-                "character": "TOM",
-                "line": "Let me see that. If it's what I think it is, this could change everything for our town."
+                "character": "STUDENT",
+                "line": "But why does honesty matter? Sometimes, it\u2019s easier to just keep quiet."
             },
             {
-                "character": "MAYA",
-                "line": "Should we tell anyone? It\u2019s risky, but maybe it\u2019s time people knew the truth."
+                "character": "ANNA",
+                "line": "Because trust builds us up. When we tell the truth, we can count on each other. That\u2019s how we grow stronger, together."
             },
             {
-                "character": "TOM",
-                "line": "Absolutely. We can\u2019t ignore this. We have to act carefully, but we need to light a fire of honesty here."
+                "character": "STUDENT",
+                "line": "What if someone lies? Won\u2019t that ruin everything?"
+            },
+            {
+                "character": "ANNA",
+                "line": "Lies can break trust, but honesty can rebuild it. That\u2019s why I started the 'Truth and Trust' project\u2014to help us all stand firm against dishonesty."
+            },
+            {
+                "character": "MAREK",
+                "line": "Excuse me, I couldn\u2019t help but listen. A project about honesty? Sounds noble, but it"
             }
         ]
     },
@@ -24,20 +32,20 @@
         "scene_number": 2,
         "dialogue": [
             {
-                "character": "TOM",
-                "line": "Are you sure about sharing this with everyone, Maya? It\u2019s risky, and we don\u2019t know how they\u2019ll react."
+                "character": "Marek",
+                "line": "Anna, I respect what you're doing, but do you really think a few kids talking about honesty can change anything?"
             },
             {
-                "character": "MAYA",
-                "line": "I believe transparency is the only way forward, Tom. People deserve to know what\u2019s been happening behind their backs."
+                "character": "ANNA",
+                "line": "Marek, small acts of integrity can ripple out. It's about planting seeds of change, one honest deed at a time."
             },
             {
-                "character": "TOM",
-                "line": "But what if it backfires? What if they deny everything or even turn against us?"
+                "character": "Marek",
+                "line": "I saw a boy return a lost wallet today. Simple act, but it made me think\u2014maybe honesty is more powerful than I believed."
             },
             {
-                "character": "MAYA",
-                "line": "We have to be prepared for that. We can't let fear stop us from doing what\u2019s right."
+                "character": "ANNA",
+                "line": "Exactly. When we lead by example, others follow. It's the beginning of something bigger."
             }
         ]
     },
@@ -45,20 +53,24 @@
         "scene_number": 3,
         "dialogue": [
             {
-                "character": "MAYA",
-                "line": "This is it, Tom. We've done everything we can, and now it's time for the town to see the truth."
+                "character": "ANNA",
+                "line": "Marek, look at this\u2014our town, our people, all coming together because they believe in honesty. That boy\u2019s act, your support, it\u2019s more powerful than you think."
             },
             {
-                "character": "TOM",
-                "line": "I never doubted us, Maya. Our courage brought this to light, and now we stand here together, hopeful."
+                "character": "MAREK",
+                "line": "I never imagined it could be this way. Seeing everyone stand proud, I realize honesty isn\u2019t just a quiet virtue\u2014it's a force that can change everything."
             },
             {
-                "character": "MAYA",
-                "line": "The town\u2019s trust is fragile, but I believe in us\u2014our honesty has planted the seed for real change."
+                "character": "ANNA",
+                "line": "Exactly. When we act with integrity, we ignite hope in others. That\u2019s how real change begins\u2014one honest act at a time."
             },
             {
-                "character": "TOM",
-                "line": "Let's hope the people embrace this and that the leaders listen. Our fight isn\u2019t over, but today, we\u2019ve won a victory for integrity."
+                "character": "MAREK",
+                "line": "And I promise, I\u2019ll keep doing my part. No matter how small, it all adds up to something bigger."
+            },
+            {
+                "character": "ANNA",
+                "line": "That\u2019s the spirit, Marek. Together, we\u2019re shaping a future rooted in trust and truth."
             }
         ]
     }

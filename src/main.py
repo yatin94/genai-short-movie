@@ -2,7 +2,7 @@ from fastapi import FastAPI, WebSocket
 import random
 import asyncio
 from db import Base, engine, SessionLocal
-from routers import movie_router
+from routers import movie_router, admin_router
 from orm.users import User, BlockList
 from orm.stories import Story
 from orm.logging import RequestState, AllBackgroundTask
@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 from db import get_db
 
-
+from prometheus_fastapi_instrumentator import Instrumentator
 
 
 
@@ -32,7 +32,9 @@ async def startup_event():
 fresh_data = []
 
 app.include_router(movie_router)
+app.include_router(admin_router)
 
+Instrumentator().instrument(app).expose(app)
 
 
 @app.get("/")

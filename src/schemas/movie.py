@@ -9,4 +9,5 @@ class MovieRequest(BaseModel):
 class MovieResponse(BaseModel):
     message: str
     user_id: str | None = None
+    request_id: str | None = None
 

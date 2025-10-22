@@ -9,9 +9,9 @@ from db import Base
 
 class Story(Base):
     __tablename__ = "stories"
-    user_id: Mapped[str] = mapped_column(ForeignKey("users.user_id"))
+    request_id: Mapped[str] = mapped_column(ForeignKey("user_requests.id"))
     story_text: Mapped[str] = mapped_column(Text, nullable=False)
-    user: Mapped["User"] = relationship("User", back_populates="story")
+    request: Mapped["UserRequest"] = relationship("UserRequest", back_populates="story") # type: ignore
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
 
     # 👇 Add this

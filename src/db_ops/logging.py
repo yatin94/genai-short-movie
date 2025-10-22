@@ -7,10 +7,11 @@ class BgTaskOperations:
         self.db_session = db_session
 
 
-    def create_bg_task(self, topic: str, user_id: str) -> AllBackgroundTask:
+    def create_bg_task(self, topic: str, user_id: str, request_id: str) -> AllBackgroundTask:
         bg_task = AllBackgroundTask(
             user_id = user_id,
-            topic = topic
+            topic = topic,
+            request_id = request_id
         )
         self.db_session.add(bg_task)
         self.db_session.commit()
@@ -23,11 +24,12 @@ class UserStateOperations:
         self.db_session = db_session
 
 
-    def create_request_state(self, comment: str, user_id: str, status: str) -> RequestState:
+    def create_request_state(self, comment: str, user_id: str, request_id: str, status: str) -> RequestState:
         request_state = RequestState(
             user_id = user_id,
             comment = comment,
-            status = status
+            status = status,
+            request_id = request_id
         )
         self.db_session.add(request_state)
         self.db_session.commit()
@@ -42,10 +44,10 @@ class UserStateOperations:
             .first()
         )
     
-    def get_all_request_states(self, user_id: str, exclude_ids = []) -> list[RequestState]:
+    def get_all_request_states(self, user_id: str, request_id: str, exclude_ids = []) -> list[RequestState]:
         return (
             self.db_session.query(RequestState)
-            .filter(RequestState.user_id == user_id)
+            .filter(RequestState.user_id == user_id, RequestState.request_id == request_id)
             .filter(RequestState.id.notin_(exclude_ids))
             .order_by(RequestState.id.asc())
             .all()

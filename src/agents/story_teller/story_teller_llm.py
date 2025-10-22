@@ -14,12 +14,12 @@ from db_ops.logging import UserStateOperations
 
 
 class StoryTellerAgent(ChildAgentABC, index=1):
-    def __init__(self, db: Session, user_id: str):
+    def __init__(self, db: Session, user_id: str, request_id: str):
         self.db: Session = db
         self.fake = True
-        UserStateOperations(self.db).create_request_state(comment="Story Writer Agent Initiated.", user_id=user_id, status="success")
+        UserStateOperations(self.db).create_request_state(comment="Story Writer Agent Initiated.", user_id=user_id, status="success", request_id=request_id)
 
-        super().__init__(user_id=user_id)
+        super().__init__(user_id=user_id, request_id=request_id)
     
     
     @property
@@ -57,7 +57,7 @@ class StoryTellerAgent(ChildAgentABC, index=1):
         else:
             response = self.chain.invoke({"topic": state["topic"], "characters_count": self.characters_count})
         self.logger.info(f"LLM response: {response}")
-        UserStateOperations(self.db).create_request_state(comment="Story Generated.", user_id=self.user_id, status="success")
+        UserStateOperations(self.db).create_request_state(comment="Story Generated.", user_id=self.user_id, status="success", request_id=self.request_id)
 
         return {"story": response}
 
@@ -68,11 +68,11 @@ class StoryTellerAgent(ChildAgentABC, index=1):
         """
         self.logger.info(f"Adding to db from story teller with state {state}")
         story_obj = Story(
-            user_id=self.user_id,
+            request_id=self.request_id,
             story_text=state['story']
         )
         StoryOperations(self.db).create_story(story_obj)
-        UserStateOperations(self.db).create_request_state(comment="Story Added to database.", user_id=self.user_id, status="success")
+        UserStateOperations(self.db).create_request_state(comment="Story Added to database.", user_id=self.user_id, status="success", request_id=self.request_id)
 
         return {"story_id": story_obj.id}
     
