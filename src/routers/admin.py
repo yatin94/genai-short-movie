@@ -33,14 +33,15 @@ class AdminDashboardResponse(TypedDict):
 router = APIRouter()
 
 class AdminLoginRequest(BaseModel):
-    email: str
+    username: str
     password: str
 
 
 @router.post("/admin/login")
 def login(admin_login_request: AdminLoginRequest, db: Session = Depends(get_db)):
-    user = db.query(AdminUser).filter(AdminUser.username == admin_login_request.email).first()
+    user = db.query(AdminUser).filter(AdminUser.username == admin_login_request.username).first()
     if not user or not user.verify_password(admin_login_request.password):
+        print("no")
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     access_token = create_access_token({"username": user.username, "id": user.admin_id})
