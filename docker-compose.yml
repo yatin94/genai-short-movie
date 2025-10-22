@@ -35,7 +35,12 @@ services:
   worker:
     build: .
     container_name: genai-short-movie-worker
-    command: poetry run celery -A src.celery_worker.celery_app worker -Q llm_queue --loglevel=info
+    command: >
+      sh -c "
+        poetry run celery -A src.celery_worker.celery_app worker -Q llm_queue --loglevel=info --concurrency=1 --hostname=worker1@%h &
+        poetry run celery -A src.celery_worker.celery_app worker -Q llm_queue --loglevel=info --concurrency=1 --hostname=worker2@%h &
+        wait
+      "
     volumes:
       - .:/FastAPI
     environment:
@@ -60,5 +65,6 @@ services:
       - "5555:5555"
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
+      - FLOWER_UNAUTHENTICATED_API=true
     depends_on:
       - worker
